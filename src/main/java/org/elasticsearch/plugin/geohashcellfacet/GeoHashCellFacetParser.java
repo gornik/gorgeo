@@ -19,6 +19,7 @@ public class GeoHashCellFacetParser extends AbstractComponent implements FacetPa
         final static String TOP_LEFT = "top_left";
         final static String BOTTOM_RIGHT = "bottom_right";
         final static String LEVEL = "level";
+        final static String ADDITIONAL_GROUPING = "additional_grouping";
     }
 
     static final class Default {
@@ -59,6 +60,7 @@ public class GeoHashCellFacetParser extends AbstractComponent implements FacetPa
                 Default.BOTTOM_RIGHT.lat(), Default.BOTTOM_RIGHT.lon());
 
         int level = Default.LEVEL;
+        String additionalGrouping = null;
 
         String currentFieldName = null;
         XContentParser.Token token;
@@ -80,12 +82,15 @@ public class GeoHashCellFacetParser extends AbstractComponent implements FacetPa
                 else if (currentFieldName.equals(ParamName.LEVEL)) {
                     level = parser.intValue();
                 }
+                else if (currentFieldName.equals(ParamName.ADDITIONAL_GROUPING)) {
+                    additionalGrouping = parser.textOrNull();
+                }
             }
         }
 
         MapBox mapBox = new MapBox(topLeft, bottomRight);
 
         return new GeoHashCellFacetExecutor(field, searchContext,
-                mapBox, level);
+                mapBox, level, additionalGrouping);
     }
 }

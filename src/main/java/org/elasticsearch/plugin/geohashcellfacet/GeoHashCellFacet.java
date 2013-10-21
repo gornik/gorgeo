@@ -30,9 +30,10 @@ public class GeoHashCellFacet extends InternalFacet {
     private static final BytesReference STREAM_TYPE = new BytesArray(TYPE);
     private final MapBox mapBox;
 
-    private Map<String, AtomicLong> counts = Maps.newHashMap();
+    private Map<GeoHashCellFacetEntry, AtomicLong> counts = Maps.newHashMap();
     private final String fieldName;
     private final int userLevel;
+    private final String additionalGrouping;
 
     /**
      * Creates the facet instance.
@@ -41,21 +42,24 @@ public class GeoHashCellFacet extends InternalFacet {
      * @param fieldName Name of the field used for grouping.
      * @param mapBox Current map viewport.
      * @param userLevel Level for geo hash grouping.
+     * @param additionalGrouping
      */
-    public GeoHashCellFacet(String facetName, Map<String, AtomicLong> counts,
+    public GeoHashCellFacet(String facetName, Map<GeoHashCellFacetEntry, AtomicLong> counts,
                             String fieldName, MapBox mapBox,
-                            int userLevel) {
+                            int userLevel, String additionalGrouping) {
         super(facetName);
         this.counts = counts;
         this.fieldName = fieldName;
         this.mapBox = mapBox;
         this.userLevel = userLevel;
+        this.additionalGrouping = additionalGrouping;
     }
 
     private GeoHashCellFacet() {
         this.fieldName = null;
         this.mapBox = null;
         this.userLevel = 0;
+        this.additionalGrouping = null;
     }
 
 
@@ -88,7 +92,7 @@ public class GeoHashCellFacet extends InternalFacet {
             if (facet instanceof GeoHashCellFacet) {
                 GeoHashCellFacet hashCellFacet = (GeoHashCellFacet) facet;
 
-                for (Map.Entry<String, AtomicLong> entry : hashCellFacet.counts.entrySet()) {
+                for (Map.Entry<GeoHashCellFacetEntry, AtomicLong> entry : hashCellFacet.counts.entrySet()) {
                     if (geoHashCellFacet.counts.containsKey(entry.getKey())) {
                         geoHashCellFacet.counts.get(entry.getKey()).addAndGet(entry.getValue().longValue());
                     }
@@ -116,7 +120,11 @@ public class GeoHashCellFacet extends InternalFacet {
         builder.field(GeoHashCellFacetParser.ParamName.BOTTOM_RIGHT, mapBox.getBottomRight());
         builder.field(GeoHashCellFacetParser.ParamName.LEVEL, mapBox.getLevel(userLevel));
         builder.field("base_map_level", mapBox.getBaseLevel());
-        builder.field("counts", counts);
+        builder.startArray("regions");
+        for (Map.Entry<GeoHashCellFacetEntry, AtomicLong> entry: counts.entrySet()) {
+            entry.getKey().toXContent(builder, entry.getValue());
+        }
+        builder.endArray();
         builder.endObject();
         return builder;
     }

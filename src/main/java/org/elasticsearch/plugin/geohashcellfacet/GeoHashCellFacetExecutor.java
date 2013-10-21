@@ -4,6 +4,7 @@ import org.apache.lucene.index.AtomicReaderContext;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.index.fielddata.GeoPointValues;
+import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.fielddata.IndexGeoPointFieldData;
 import org.elasticsearch.search.facet.FacetExecutor;
 import org.elasticsearch.search.facet.InternalFacet;
@@ -16,27 +17,39 @@ import java.util.concurrent.atomic.AtomicLong;
 public class GeoHashCellFacetExecutor extends FacetExecutor {
     private final String fieldName;
     private final int userLevel;
-    private Map<String, AtomicLong> counts = Maps.newHashMap();
+    private final String additionalGrouping;
+    private Map<GeoHashCellFacetEntry, AtomicLong> counts = Maps.newHashMap();
     private final IndexGeoPointFieldData indexFieldData;
+    private final IndexFieldData additionalGroupingFieldData;
     private final MapBox mapBox;
 
     public GeoHashCellFacetExecutor(String fieldName,
                                     SearchContext searchContext,
                                     MapBox mapBox,
-                                    int userLevel) {
+                                    int userLevel, String additionalGrouping) {
         this.fieldName = fieldName;
         this.mapBox = mapBox;
         this.userLevel = userLevel;
+        this.additionalGrouping = additionalGrouping;
+
         this.indexFieldData = searchContext
                 .fieldData()
                 .getForField(searchContext.smartNameFieldMapper(fieldName));
+
+        if (additionalGrouping != null && !additionalGrouping.isEmpty()) {
+            this.additionalGroupingFieldData = searchContext
+                    .fieldData()
+                    .getForField(searchContext.smartNameFieldMapper(additionalGrouping));
+        } else {
+            this.additionalGroupingFieldData = null;
+        }
     }
 
     @Override
     public InternalFacet buildFacet(String facetName) {
         return new GeoHashCellFacet(
                 facetName, counts, fieldName,
-                mapBox, userLevel);
+                mapBox, userLevel, additionalGrouping);
     }
 
     @Override
@@ -47,11 +60,15 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
     final class Collector extends FacetExecutor.Collector {
 
         protected GeoPointValues values;
+        protected String additionalGroupingValue;
 
         @Override
         public void setNextReader(AtomicReaderContext context)
                 throws IOException {
             values = indexFieldData.load(context).getGeoPointValues();
+
+            if (additionalGroupingFieldData != null)
+                additionalGroupingValue = additionalGroupingFieldData.load(context).toString();
         }
 
         @Override
@@ -59,7 +76,7 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
             final GeoPointValues.Iter iterator = values.getIter(docId);
 
             if (iterator == null || !iterator.hasNext()) {
-                increment("_missing", 1L);
+                increment(new MissingGeoValueEntry(), 1L);
                 return;
             }
 
@@ -70,7 +87,8 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
                     continue;
 
                 GeoHashCell cell = new GeoHashCell(point, mapBox.getLevel(userLevel));
-                increment(cell.toString(), 1L);
+                GeoHashCellEntry entry = GeoHashCellEntry.createEntry(cell, additionalGroupingValue);
+                increment(entry, 1L);
             }
         }
 
@@ -79,11 +97,11 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
             // do nothing
         }
 
-        private void increment(String name, Long value) {
-            if (counts.containsKey(name)) {
-                counts.get(name).addAndGet(value);
+        private void increment(GeoHashCellFacetEntry entry, Long value) {
+            if (counts.containsKey(entry)) {
+                counts.get(entry).addAndGet(value);
             } else {
-                counts.put(name, new AtomicLong(value));
+                counts.put(entry, new AtomicLong(value));
             }
         }
     }
