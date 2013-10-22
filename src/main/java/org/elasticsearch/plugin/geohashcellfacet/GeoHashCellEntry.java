@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class GeoHashCellEntry implements GeoHashCellFacetEntry {
 
-    private final GeoHashCell cell;
+    protected final GeoHashCell cell;
 
     public GeoHashCellEntry(GeoHashCell cell) {
         this.cell = cell;
@@ -29,6 +29,10 @@ public class GeoHashCellEntry implements GeoHashCellFacetEntry {
         return cell.equals(that.cell);
     }
 
+    public static GeoHashCellEntry createEntry(GeoHashCell cell) {
+        return createEntry(cell, null);
+    }
+
     public static GeoHashCellEntry createEntry(GeoHashCell cell, String additionalGroupingValue) {
         return additionalGroupingValue == null || additionalGroupingValue.isEmpty()
                 ? new GeoHashCellEntry(cell)
@@ -36,13 +40,12 @@ public class GeoHashCellEntry implements GeoHashCellFacetEntry {
     }
 
     @Override
-    public XContentBuilder toXContent(XContentBuilder builder, AtomicLong value)  throws IOException  {
-        GeoPoint center = cell.getCenter();
-        builder.startObject();
-        builder.field("lat", center.lat());
-        builder.field("lon", center.lon());
-        builder.field("count", value);
-        builder.endObject();
-        return builder;
+    public GeoHashCellWithGroupings createCellWithGroupings(AtomicLong value) {
+        return new GeoHashCellWithGroupings(cell, value.get());
+    }
+
+    @Override
+    public String getKey() {
+        return cell.toString();
     }
 }

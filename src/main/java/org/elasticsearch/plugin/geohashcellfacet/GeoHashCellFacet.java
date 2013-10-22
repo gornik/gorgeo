@@ -33,33 +33,36 @@ public class GeoHashCellFacet extends InternalFacet {
     private Map<GeoHashCellFacetEntry, AtomicLong> counts = Maps.newHashMap();
     private final String fieldName;
     private final int userLevel;
-    private final String additionalGrouping;
+    private final String additionalGroupingField;
+
+    private GeoHashCellFacetResult results;
 
     /**
      * Creates the facet instance.
      * @param facetName Name of the facet.
-     * @param counts Map of the group counts.
+     * @param results
      * @param fieldName Name of the field used for grouping.
      * @param mapBox Current map viewport.
      * @param userLevel Level for geo hash grouping.
-     * @param additionalGrouping
+     * @param additionalGroupingField
      */
-    public GeoHashCellFacet(String facetName, Map<GeoHashCellFacetEntry, AtomicLong> counts,
+    public GeoHashCellFacet(String facetName, GeoHashCellFacetResult results,
                             String fieldName, MapBox mapBox,
-                            int userLevel, String additionalGrouping) {
+                            int userLevel, String additionalGroupingField) {
         super(facetName);
-        this.counts = counts;
+        this.results = results;
         this.fieldName = fieldName;
         this.mapBox = mapBox;
         this.userLevel = userLevel;
-        this.additionalGrouping = additionalGrouping;
+        this.additionalGroupingField = additionalGroupingField;
     }
 
     private GeoHashCellFacet() {
         this.fieldName = null;
         this.mapBox = null;
         this.userLevel = 0;
-        this.additionalGrouping = null;
+        this.results = new GeoHashCellFacetResult();
+        this.additionalGroupingField = null;
     }
 
 
@@ -92,14 +95,7 @@ public class GeoHashCellFacet extends InternalFacet {
             if (facet instanceof GeoHashCellFacet) {
                 GeoHashCellFacet hashCellFacet = (GeoHashCellFacet) facet;
 
-                for (Map.Entry<GeoHashCellFacetEntry, AtomicLong> entry : hashCellFacet.counts.entrySet()) {
-                    if (geoHashCellFacet.counts.containsKey(entry.getKey())) {
-                        geoHashCellFacet.counts.get(entry.getKey()).addAndGet(entry.getValue().longValue());
-                    }
-                    else {
-                        geoHashCellFacet.counts.put(entry.getKey(), entry.getValue());
-                    }
-                }
+                geoHashCellFacet.results = geoHashCellFacet.results.reduce(hashCellFacet.results);
             }
         }
 
@@ -121,9 +117,9 @@ public class GeoHashCellFacet extends InternalFacet {
         builder.field(GeoHashCellFacetParser.ParamName.LEVEL, mapBox.getLevel(userLevel));
         builder.field("base_map_level", mapBox.getBaseLevel());
         builder.startArray("regions");
-        for (Map.Entry<GeoHashCellFacetEntry, AtomicLong> entry: counts.entrySet()) {
-            entry.getKey().toXContent(builder, entry.getValue());
-        }
+
+        results.toXContent(builder);
+
         builder.endArray();
         builder.endObject();
         return builder;

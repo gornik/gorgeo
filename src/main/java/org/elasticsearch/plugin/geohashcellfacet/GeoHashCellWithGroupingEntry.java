@@ -1,5 +1,10 @@
 package org.elasticsearch.plugin.geohashcellfacet;
 
+import org.elasticsearch.common.collect.Maps;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class GeoHashCellWithGroupingEntry extends GeoHashCellEntry {
 
     private final String additionalGroupingValue;
@@ -18,6 +23,13 @@ public class GeoHashCellWithGroupingEntry extends GeoHashCellEntry {
         GeoHashCellWithGroupingEntry that = (GeoHashCellWithGroupingEntry) o;
 
         return additionalGroupingValue.equals(that.additionalGroupingValue);
+    }
+
+    @Override
+    public GeoHashCellWithGroupings createCellWithGroupings(AtomicLong value) {
+        Map<String, AtomicLong> counts = Maps.newHashMap();
+        counts.put(additionalGroupingValue, value);
+        return new GeoHashCellWithGroupings(cell, value.get(), counts);
     }
 
     @Override

@@ -21,8 +21,12 @@ public class MissingGeoValueEntry implements GeoHashCellFacetEntry {
     }
 
     @Override
-    public XContentBuilder toXContent(XContentBuilder builder, AtomicLong value) throws IOException {
-        builder.field(MISSING_ENTRY, value);
-        return builder;
+    public ResultWithGroupings createCellWithGroupings(AtomicLong value) {
+        return new MissingGeoValueWithGroupings(value);
+    }
+
+    @Override
+    public String getKey() {
+        return MISSING_ENTRY;
     }
 }
