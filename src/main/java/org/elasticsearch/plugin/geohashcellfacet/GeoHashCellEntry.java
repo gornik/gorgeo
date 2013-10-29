@@ -1,6 +1,8 @@
 package org.elasticsearch.plugin.geohashcellfacet;
 
 import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -47,5 +49,16 @@ public class GeoHashCellEntry implements GeoHashCellFacetEntry {
     @Override
     public String getKey() {
         return cell.toString();
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        out.writeString("GeoHashCellEntry");
+        cell.writeTo(out);
+    }
+
+    public static GeoHashCellFacetEntry readFrom(StreamInput in) throws IOException {
+        GeoHashCell cell = GeoHashCell.readFrom(in);
+        return new GeoHashCellEntry(cell);
     }
 }

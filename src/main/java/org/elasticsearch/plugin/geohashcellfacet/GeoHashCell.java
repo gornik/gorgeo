@@ -2,6 +2,10 @@ package org.elasticsearch.plugin.geohashcellfacet;
 
 import org.elasticsearch.common.geo.GeoHashUtils;
 import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
+
+import java.io.IOException;
 
 /**
  * Represents a cell established by the geo hash prefix.
@@ -78,5 +82,14 @@ public class GeoHashCell {
     @Override
     public String toString() {
         return getCenter().toString();
+    }
+
+    public void writeTo(StreamOutput out) throws IOException {
+        out.writeString(geoHashPrefix);
+    }
+
+    public static GeoHashCell readFrom(StreamInput in) throws IOException {
+        String geoHashPrefix = in.readString();
+        return new GeoHashCell(geoHashPrefix);
     }
 }

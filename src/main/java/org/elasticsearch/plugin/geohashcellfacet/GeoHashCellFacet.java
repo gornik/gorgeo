@@ -3,7 +3,10 @@ package org.elasticsearch.plugin.geohashcellfacet;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.Maps;
+import org.elasticsearch.common.geo.GeoHashUtils;
+import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilderString;
 import org.elasticsearch.search.facet.Facet;
@@ -28,12 +31,12 @@ public class GeoHashCellFacet extends InternalFacet {
 
     public static final String TYPE = "geohashcell";
     private static final BytesReference STREAM_TYPE = new BytesArray(TYPE);
-    private final MapBox mapBox;
+    private MapBox mapBox;
 
     private Map<GeoHashCellFacetEntry, AtomicLong> counts = Maps.newHashMap();
-    private final String fieldName;
-    private final int userLevel;
-    private final String additionalGroupingField;
+    private String fieldName;
+    private int userLevel;
+    private String additionalGroupingField;
 
     private GeoHashCellFacetResult results;
 
@@ -82,6 +85,46 @@ public class GeoHashCellFacet extends InternalFacet {
     @Override
     public BytesReference streamType() {
         return STREAM_TYPE;
+    }
+
+    @Override
+    public void readFrom(StreamInput in) throws IOException {
+        super.readFrom(in);
+        this.mapBox = MapBox.readFrom(in);
+
+        int countsSize = in.readInt();
+
+        for (int i = 0; i<countsSize; i++) {
+            GeoHashCellFacetEntry entry = GeoHashCellFacetEntryReader.readFrom(in);
+            long value = in.readLong();
+            counts.put(entry, new AtomicLong(value));
+        }
+
+        this.results = GeoHashCellFacetResult.readFrom(in);
+
+        this.fieldName = in.readString();
+        this.userLevel = in.readInt();
+        this.additionalGroupingField = in.readOptionalString();
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        super.writeTo(out);
+
+        this.mapBox.writeTo(out);
+
+        out.writeInt(counts.size());
+
+        for (Map.Entry<GeoHashCellFacetEntry, AtomicLong> entry : counts.entrySet()) {
+            entry.getKey().writeTo(out);
+            out.writeLong(entry.getValue().get());
+        }
+
+        this.results.writeTo(out);
+
+        out.writeString(this.fieldName);
+        out.writeInt(this.userLevel);
+        out.writeOptionalString(this.additionalGroupingField);
     }
 
     @Override

@@ -4,7 +4,11 @@ package org.elasticsearch.plugin.geohashcellfacet;
 import org.elasticsearch.common.geo.GeoDistance;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.geo.GeoUtils;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.DistanceUnit;
+
+import java.io.IOException;
 
 /**
  * A box representing the current map viewport.
@@ -109,5 +113,25 @@ public class MapBox {
                 topLeft.lat(), topLeft.lon(),
                 bottomRight.lat(), topLeft.lon(),
                 DistanceUnit.METERS);
+    }
+
+    public static MapBox readFrom(StreamInput in) throws IOException {
+        GeoPoint topLeft = new GeoPoint();
+        GeoPoint bottomRight = new GeoPoint();
+
+        String topLeftHash = in.readString();
+        String bottomRightHash = in.readString();
+        topLeft.resetFromGeoHash(topLeftHash);
+        bottomRight.resetFromGeoHash(bottomRightHash);
+
+        return new MapBox(topLeft, bottomRight);
+    }
+
+    public void writeTo(StreamOutput out) throws IOException {
+        String topLeftHash = this.getTopLeft().geohash();
+        String bottomRightHash = this.getBottomRight().geohash();
+
+        out.writeString(topLeftHash);
+        out.writeString(bottomRightHash);
     }
 }

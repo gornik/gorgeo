@@ -1,6 +1,8 @@
 package org.elasticsearch.plugin.geohashcellfacet;
 
 import org.elasticsearch.common.collect.Maps;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -61,6 +63,29 @@ public class GeoHashCellFacetResult {
         for (Map.Entry<String, ResultWithGroupings> entry : counts.entrySet()) {
             entry.getValue().toXContent(builder);
         }
+    }
+
+    public void writeTo(StreamOutput out) throws IOException {
+        out.writeInt(counts.size());
+
+        for (Map.Entry<String, ResultWithGroupings> entry : counts.entrySet()) {
+            out.writeString(entry.getKey());
+            entry.getValue().writeTo(out);
+        }
+
+    }
+
+    public static GeoHashCellFacetResult readFrom(StreamInput in) throws IOException {
+        int countsSize = in.readInt();
+
+        Map<String, ResultWithGroupings> counts = Maps.newHashMap();
+
+        for (int i = 0; i<countsSize; i++) {
+            String key = in.readString();
+            counts.put(key, ResultWithGroupingsReader.readFrom(in));
+        }
+
+        return new GeoHashCellFacetResult(counts);
     }
 }
 

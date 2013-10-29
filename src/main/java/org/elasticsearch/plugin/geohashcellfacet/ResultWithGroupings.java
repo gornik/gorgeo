@@ -1,6 +1,7 @@
 package org.elasticsearch.plugin.geohashcellfacet;
 
 import org.elasticsearch.common.collect.Maps;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -26,4 +27,6 @@ public abstract class ResultWithGroupings {
     }
 
     public abstract void toXContent(XContentBuilder builder) throws IOException;
+
+    public abstract void writeTo(StreamOutput out) throws IOException;
 }

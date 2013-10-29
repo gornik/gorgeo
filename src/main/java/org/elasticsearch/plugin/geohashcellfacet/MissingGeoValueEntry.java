@@ -1,5 +1,6 @@
 package org.elasticsearch.plugin.geohashcellfacet;
 
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -28,5 +29,10 @@ public class MissingGeoValueEntry implements GeoHashCellFacetEntry {
     @Override
     public String getKey() {
         return MISSING_ENTRY;
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        out.writeString("MissingGeoValueEntry");
     }
 }

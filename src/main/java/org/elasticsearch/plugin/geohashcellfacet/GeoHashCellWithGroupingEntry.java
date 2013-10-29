@@ -1,7 +1,10 @@
 package org.elasticsearch.plugin.geohashcellfacet;
 
 import org.elasticsearch.common.collect.Maps;
+import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,5 +40,18 @@ public class GeoHashCellWithGroupingEntry extends GeoHashCellEntry {
         int result = super.hashCode();
         result = 31 * result + additionalGroupingValue.hashCode();
         return result;
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        out.writeString("GeoHashCellWithGroupingEntry");
+        cell.writeTo(out);
+        out.writeString(additionalGroupingValue);
+    }
+
+    public static GeoHashCellFacetEntry readFrom(StreamInput in) throws IOException {
+        GeoHashCell cell = GeoHashCell.readFrom(in);
+        String additionalGroupingValue = in.readString();
+        return new GeoHashCellWithGroupingEntry(cell, additionalGroupingValue);
     }
 }
