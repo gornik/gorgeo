@@ -3,10 +3,10 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.elasticsearch.plugin.geohashcellfacet</groupId>
-    <artifactId>GeoHashCellFacetPlugin</artifactId>
+    <artifactId>gorgeo</artifactId>
     <packaging>jar</packaging>
-    <version>1.0</version>
-    <name>GeoHashCellFacetPlugin</name>
+    <version>1.0.2</version>
+    <name>gorgeo</name>
     <url>http://maven.apache.org</url>
 
     <build>
@@ -17,7 +17,7 @@
                 <version>2.3</version>
                 <configuration>
                     <finalName>
-                        elasticsearch-${project.name}-${elasticsearch.version}
+                        ${project.name}-${version}-${elasticsearch.version}
                     </finalName>
                 </configuration>
             </plugin>
@@ -65,7 +65,7 @@
                 <version>2.2.1</version>
                 <configuration>
                     <finalName>
-                        elasticsearch-${project.name}-${elasticsearch.version}
+                        ${project.name}-${version}-${elasticsearch.version}
                     </finalName>
                     <appendAssemblyId>false</appendAssemblyId>
                     <outputDirectory>${project.build.directory}/release/

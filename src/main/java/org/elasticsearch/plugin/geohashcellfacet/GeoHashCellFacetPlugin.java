@@ -8,6 +8,8 @@ import org.elasticsearch.search.facet.FacetModule;
  * Plugin which extends ElasticSearch with a Geohash Cell facet functionality.
  */
 public class GeoHashCellFacetPlugin extends AbstractPlugin {
+    private final static String version = "1.0.2";
+
     /**
      * Name of the plugin.
      *
@@ -15,7 +17,7 @@ public class GeoHashCellFacetPlugin extends AbstractPlugin {
      */
     @Override
     public String name() {
-        return "geohashcell-facet";
+        return "gorgeo-" + version;
     }
 
     /**
