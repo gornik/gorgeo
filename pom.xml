@@ -5,7 +5,7 @@
     <groupId>org.elasticsearch.plugin.geohashcellfacet</groupId>
     <artifactId>gorgeo</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <name>gorgeo</name>
     <url>http://maven.apache.org</url>
 
@@ -17,7 +17,7 @@
                 <version>2.3</version>
                 <configuration>
                     <finalName>
-                        ${project.name}-${version}-${elasticsearch.version}
+                        ${project.name}-${project.version}-${elasticsearch.version}
                     </finalName>
                 </configuration>
             </plugin>
@@ -65,7 +65,7 @@
                 <version>2.2.1</version>
                 <configuration>
                     <finalName>
-                        ${project.name}-${version}-${elasticsearch.version}
+                        ${project.name}-${project.version}-${elasticsearch.version}
                     </finalName>
                     <appendAssemblyId>false</appendAssemblyId>
                     <outputDirectory>${project.build.directory}/release/
@@ -97,7 +97,7 @@
     </build>
 
     <properties>
-        <elasticsearch.version>0.90.5</elasticsearch.version>
+        <elasticsearch.version>0.90.6</elasticsearch.version>
     </properties>
 
     <dependencies>

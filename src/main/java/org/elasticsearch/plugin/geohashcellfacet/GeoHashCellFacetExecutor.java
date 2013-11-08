@@ -1,9 +1,7 @@
 package org.elasticsearch.plugin.geohashcellfacet;
 
-import org.apache.lucene.index.AtomicReader;
+
 import org.apache.lucene.index.AtomicReaderContext;
-import org.apache.lucene.index.IndexableField;
-import org.apache.lucene.index.Terms;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.collect.Maps;
@@ -19,7 +17,6 @@ import org.elasticsearch.search.facet.InternalFacet;
 import org.elasticsearch.search.internal.SearchContext;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -78,7 +75,9 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
             values = indexFieldData.load(context).getGeoPointValues();
 
             if (additionalGroupingFieldData != null) {
-                additionalValues = additionalGroupingFieldData.load(context).getBytesValues();
+                additionalValues = additionalGroupingFieldData
+                        .load(context)
+                        .getBytesValues(false);
 
             } else {
                 additionalValues = null;
@@ -87,33 +86,35 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
 
         @Override
         public void collect(int docId) throws IOException {
-            final GeoPointValues.Iter iterator = values.getIter(docId);
+            final int numPoints = values.setDocument(docId);
 
-            if (iterator == null || !iterator.hasNext()) {
+            if (numPoints == 0) {
                 increment(new MissingGeoValueEntry(), 1L);
                 return;
             }
 
-            while (iterator.hasNext()) {
-                GeoPoint point = iterator.next();
+            for (int i = 0; i < numPoints; i++) {
+
+                GeoPoint point = values.nextValue();
 
                 if (!mapBox.includes(point))
                     continue;
 
                 GeoHashCell cell = new GeoHashCell(point, mapBox.getLevel(userLevel));
 
-                if (additionalValues != null && additionalValues.hasValue(docId)) {
-                    final BytesValues.Iter iter = additionalValues.getIter(docId);
-                    while (iter.hasNext()) {
+                if (additionalValues == null) {
+                    increment(GeoHashCellEntry.createEntry(cell), 1L);
+                } else {
+                    final int numValues = additionalValues.setDocument(docId);
 
-                        BytesRef bytesRef = iter.next();
+                    if (numValues == 0)
+                        increment(GeoHashCellEntry.createEntry(cell), 1L);
+
+                    for (int j = 0; j < numValues; j++) {
+                        BytesRef bytesRef = additionalValues.nextValue();
                         Text text = new BytesText(new BytesArray(bytesRef));
-
                         increment(GeoHashCellEntry.createEntry(cell, text.string()), 1L);
                     }
-                }
-                else {
-                    increment(GeoHashCellEntry.createEntry(cell), 1L);
                 }
             }
         }
