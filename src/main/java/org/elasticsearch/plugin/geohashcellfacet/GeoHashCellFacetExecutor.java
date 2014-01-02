@@ -25,7 +25,7 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
     private final int userLevel;
     private final String additionalGroupingField;
     private final IndexFieldData additionalGroupingFieldData;
-    private Map<GeoHashCellFacetEntry, AtomicLong> counts = Maps.newHashMap();
+    private final GeoHashCellCounts counts = new GeoHashCellCounts();
     private final IndexGeoPointFieldData indexFieldData;
     private final MapBox mapBox;
 
@@ -53,7 +53,7 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
 
     @Override
     public InternalFacet buildFacet(String facetName) {
-        GeoHashCellFacetResult results = GeoHashCellFacetResult.createFromEntryCounts(counts);
+        GeoHashCellFacetResult results = counts.createResults();
         return new GeoHashCellFacet(
                 facetName, results, fieldName,
                 mapBox, userLevel, additionalGroupingField);
@@ -78,7 +78,6 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
                 additionalValues = additionalGroupingFieldData
                         .load(context)
                         .getBytesValues(false);
-
             } else {
                 additionalValues = null;
             }
@@ -89,7 +88,7 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
             final int numPoints = values.setDocument(docId);
 
             if (numPoints == 0) {
-                increment(new MissingGeoValueEntry(), 1L);
+                counts.addMissing();
                 return;
             }
 
@@ -103,17 +102,17 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
                 GeoHashCell cell = new GeoHashCell(point, mapBox.getLevel(userLevel));
 
                 if (additionalValues == null) {
-                    increment(GeoHashCellEntry.createEntry(cell), 1L);
+                    counts.addEntry(GeoHashCellEntry.createEntry(cell));
                 } else {
                     final int numValues = additionalValues.setDocument(docId);
 
                     if (numValues == 0)
-                        increment(GeoHashCellEntry.createEntry(cell), 1L);
+                        counts.addEntry(GeoHashCellEntry.createEntry(cell));
 
                     for (int j = 0; j < numValues; j++) {
                         BytesRef bytesRef = additionalValues.nextValue();
                         Text text = new BytesText(new BytesArray(bytesRef));
-                        increment(GeoHashCellEntry.createEntry(cell, text.string()), 1L);
+                        counts.addEntry(GeoHashCellEntry.createEntry(cell, text.string()));
                     }
                 }
             }
@@ -122,14 +121,6 @@ public class GeoHashCellFacetExecutor extends FacetExecutor {
         @Override
         public void postCollection() {
 
-        }
-
-        private void increment(GeoHashCellFacetEntry entry, Long value) {
-            if (counts.containsKey(entry)) {
-                counts.get(entry).addAndGet(value);
-            } else {
-                counts.put(entry, new AtomicLong(value));
-            }
         }
     }
 }

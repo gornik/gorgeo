@@ -1,7 +1,7 @@
 
 
 
-ES_HOME = /opt/elasticsearch-0.90.7
+ES_HOME = /opt/elasticsearch-0.90.9
 ES_HTTP = http://localhost:9200
 
 MVN = mvn
