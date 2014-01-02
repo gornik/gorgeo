@@ -63,7 +63,6 @@ public class MissingGeoValueWithGroupings extends ResultWithGroupings {
     }
 
     public static ResultWithGroupings readFrom(StreamInput in) throws IOException {
-
         long total = in.readLong();
         int groupingsSize = in.readInt();
 

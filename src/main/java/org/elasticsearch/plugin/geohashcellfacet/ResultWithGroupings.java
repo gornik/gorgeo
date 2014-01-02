@@ -1,6 +1,5 @@
 package org.elasticsearch.plugin.geohashcellfacet;
 
-import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -14,16 +13,14 @@ public abstract class ResultWithGroupings {
 
     protected Map<String, AtomicLong> mergeGroupings(
             Map<String, AtomicLong> firstGroupings, Map<String, AtomicLong> secondGroupings) {
-        Map<String, AtomicLong> result = Maps.newHashMap(firstGroupings);
-
         for (Map.Entry<String, AtomicLong> entry : secondGroupings.entrySet()) {
-            if (result.containsKey(entry.getKey()))
-                result.get(entry.getKey()).addAndGet(entry.getValue().get());
+            if (firstGroupings.containsKey(entry.getKey()))
+                firstGroupings.get(entry.getKey()).addAndGet(entry.getValue().get());
             else
-                result.put(entry.getKey(), entry.getValue());
+                firstGroupings.put(entry.getKey(), entry.getValue());
         }
 
-        return result;
+        return firstGroupings;
     }
 
     public abstract void toXContent(XContentBuilder builder) throws IOException;

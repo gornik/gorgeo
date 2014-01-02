@@ -25,28 +25,26 @@ public class GeoHashCellFacetResult {
     }
 
     private GeoHashCellFacetResult(Map<String, ResultWithGroupings> counts) {
-        this.counts = Maps.newHashMap(counts);
+        this.counts = counts;
     }
 
     public GeoHashCellFacetResult reduce(GeoHashCellFacetResult other) {
-
-        Map<String, ResultWithGroupings> countsCopy = Maps.newHashMap(this.counts);
 
         for (Map.Entry<String, ResultWithGroupings> pair : other.counts.entrySet()) {
             String key = pair.getKey();
             ResultWithGroupings value = pair.getValue();
 
-            if (countsCopy.containsKey(key)) {
-                ResultWithGroupings oldValue = countsCopy.get(key);
-                countsCopy.remove(key);
-                countsCopy.put(key, oldValue.merge(value));
+            if (this.counts.containsKey(key)) {
+                ResultWithGroupings oldValue = this.counts.get(key);
+                this.counts.remove(key);
+                this.counts.put(key, oldValue.merge(value));
             }
             else {
-                countsCopy.put(key, value);
+                this.counts.put(key, value);
             }
         }
 
-        return new GeoHashCellFacetResult(countsCopy);
+        return new GeoHashCellFacetResult(this.counts);
     }
 
     public static GeoHashCellFacetResult createFromEntryCounts(Map<GeoHashCellFacetEntry, AtomicLong> counts) {
